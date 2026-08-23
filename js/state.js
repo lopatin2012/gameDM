@@ -11,8 +11,8 @@ function defaultState() {
   return {
     v: CFG.VERSION,
     t: 0,                    // секунды с начала партии
-    ir: CFG.START_CAPITAL,   // инновационные рубли
-    zsh: 0,                  // золотые шестерёнки (донат, пока не активен)
+    ir: CFG.START_CAPITAL,   // рубли
+    zsh: 0,                  // резервный счётчик (не используется)
     phase: 'prep',           // 'prep' | 'post' | 'over' | 'won'
 
     // оборудование (стадии)
