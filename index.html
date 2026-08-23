@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Честный Знак: Линия</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ======== ШАПКА СТАТИСТИКИ ======== -->
+<header id="hud" class="hidden">
+  <div class="chip chip-money" id="chp-ir" title="Рубли — основная валюта">💵 Рубли: <b>0</b></div>
+  <div class="chip chip-time" id="chp-time" title="Время до обязательного внедрения ЧЗ">⏳ Дедлайн: <b>10:00</b></div>
+  <div class="chip" id="chp-phase">📋 Фаза: <b>Подготовка</b></div>
+  <div class="chip chip-req" id="chp-req" title="Доля продукции, которая обязана быть промаркирована">📊 Требование ЧЗ: <b>—</b></div>
+  <div class="chip chip-reg" id="chp-reg" title="Доля последних завершённых продуктов, на которых реально есть код DM">✅ Промаркировано: <b>—</b></div>
+  <div class="chip chip-streak" id="chp-streak" title="Наценка: серия продаж без брака повышает цену">🔥 Наценка: <b>×1.0</b></div>
+  <div class="chip" id="chp-product" title="Единственный тип продукта на заводе (меняется только новой партией)">📦 Продукт: <b>—</b></div>
+</header>
+
+<main id="game" class="hidden">
+
+  <!-- ======== СЦЕНА: КОНВЕЙЕР ======== -->
+  <section id="scene">
+    <div id="banner" class="hidden"></div>
+    <div id="stage-label"><span id="stage-text">Этап 0 · Запуск линии</span></div>
+    <div id="belt-wrap">
+      <div id="belt">
+        <div id="zone-prod" title="Кликайте — каждый клик подаёт один продукт на линию">🏭<br>ПРОИЗВОДСТВО<br><span class="small">клик = продукт</span></div>
+        <div class="zone zone-print"  ><span id="zprint-label">🏷️ Наклейка</span></div>
+        <div class="zone zone-camera" ><span>📷 Проверка DM</span></div>
+        <div class="zone zone-reject" ><span>🗑️ Отбраковка</span></div>
+        <div class="zone zone-server" ><span>📤 Накопитель</span></div>
+        <div id="reject-module" class="hidden"
+          title="Сюда скатывается брак. Клик — вернуть на конвейер для перемаркировки (просроченное уходит в утиль)">
+          <div class="rm-head">🗑️ Отбраковка</div>
+          <div id="scrap-icons" class="rm-icons"></div>
+          <div id="scrap-reasons" class="rm-reasons"></div>
+          <div class="rm-cta">↩️ Вернуть на линию (<b id="scrap-count">0</b>)</div>
+        </div>
+        <div id="hint" class="hidden">👆 Кликайте по зоне «Производство» слева, чтобы доложить продукт · Клейте этикетки в «Операторе»</div>
+      </div>
+    </div>
+
+    <!-- ======== ПАНЕЛЬ «ОПЕРАТОР»: этапы конвейера ======== -->
+    <div id="operator">
+      <div class="op-stage">
+        <div class="op-head">📦 Коды Честного знака</div>
+        <div class="op-code mono" id="op-codes-stock">Коды ЧЗ: 0 · Этикетки: 0</div>
+        <div class="op-code op-status" id="op-codes-status"></div>
+        <button id="btn-op-codes" class="btn">📦 Заказать 200 кодов ЧЗ</button>
+      </div>
+      <div class="op-stage">
+        <div class="op-head">🏷️ Наклейка этикетки</div>
+        <div class="op-product" data-op="stick" title="Нажмите, чтобы посмотреть паспорт продукта"><span id="op-stick-prod">—</span></div>
+        <div class="op-code mono" id="op-stick-info"></div>
+        <button id="btn-op-stick" class="btn btn-primary">🏷️ Наклеить этикетку</button>
+      </div>
+      <div class="op-stage">
+        <div class="op-head">📷 Сканирование</div>
+        <div class="op-code op-status" id="op-scan-err"></div>
+        <div class="op-product" data-op="scan" title="Нажмите, чтобы посмотреть паспорт продукта"><span id="op-scan-prod">—</span></div>
+        <div class="op-code mono op-status" id="op-scan-status"></div>
+      </div>
+      <div class="op-stage">
+        <div class="op-head">➕ Подача на линию</div>
+        <button id="btn-prod-add" class="btn">➕ Продукт</button>
+        <div class="small">или клик по зоне «🏭 ПРОИЗВОДСТВО»</div>
+      </div>
+      <div class="op-stage">
+        <div class="op-head">🏭 Производственная партия</div>
+        <div class="op-code" id="op-batch-info">Партия №1: 0 / 50 шт</div>
+        <div class="bar"><div id="op-batch-fill" class="cc-fill" style="width:0%"></div></div>
+      </div>
+      <div class="op-stage">
+        <div class="op-head">📦 Склад готовой продукции</div>
+        <div class="op-code" id="op-send-count">Заполнение склада: 0 / 40</div>
+        <div class="bar"><div id="op-wh-fill" class="cc-fill" style="width:0%"></div></div>
+        <button id="btn-op-send" class="btn">📤 Продать на рынок</button>
+      </div>
+    </div>
+
+    <div id="fx-layer"></div>
+  </section>
+
+  <!-- ======== НИЖНЯЯ ЗОНА: ОБОРУДОВАНИЕ (слева) · КОНТРАКТЫ (центр) · ЛОГ ======== -->
+  <section id="lower">
+    <div id="left-col">
+      <div id="equip-panel">
+        <h3>Оборудование для маркировки</h3>
+        <div id="equip-list"></div>
+      </div>
+    </div>
+
+    <div id="contracts-panel">
+      <h3>📋 Контракты заказчиков</h3>
+      <div id="contracts-empty" class="small">Заключите договор — соберите нужное количество упаковок и передайте до срока.</div>
+      <div id="contracts-list"></div>
+    </div>
+
+    <div id="log-panel">
+      <h3>События производства</h3>
+      <ul id="log-list"></ul>
+    </div>
+  </section>
+</main>
+
+<!-- ======== МОДАЛКА СОБЫТИЯ ======== -->
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <button id="modal-close" class="modal-close" title="Закрыть">✕</button>
+    <div id="modal-icon" class="modal-icon">⚠️</div>
+    <h2 id="modal-title"></h2>
+    <p id="modal-text"></p>
+    <div id="modal-choices"></div>
+  </div>
+</div>
+
+<!-- ======== ЛЕНТА УВЕДОМЛЕНИЙ (независимые события) ======== -->
+<div id="toast-feed"></div>
+
+<!-- ======== МОДАЛЬНОЕ ОКНО УЛУЧШЕНИЙ (открывается по шестерёнке оборудования) ======== -->
+<div id="upgrade-modal" class="modal-back hidden">
+  <div class="modal-box upgrade-box">
+    <button id="upgr-close" class="modal-close" title="Закрыть">✕</button>
+    <h3 id="upgr-label">🔧 Улучшения</h3>
+    <div class="small">Покупка улучшений идёт на ходу — линия не останавливается. Цены уже с учётом скидки ×3.</div>
+    <div id="upgr-list"></div>
+  </div>
+</div>
+
+<!-- ======== ПАСПОРТ ПРОДУКТА: строка кода DataMatrix ======== -->
+<div id="inspect" class="hidden">
+  <div class="inspect-box">
+    <button id="inspect-close" class="modal-close" title="Закрыть">✕</button>
+    <div class="inspect-head">
+      <span id="inspect-icon" class="inspect-icon">📦</span>
+      <div>
+        <h2 id="inspect-name">Продукт</h2>
+        <div class="small" id="inspect-status">—</div>
+        <div class="small inspect-dates" id="inspect-dates"></div>
+      </div>
+    </div>
+    <div class="inspect-dm" id="inspect-dm" title="Вид кода одинаков для всех партий — уникальна строка ниже"></div>
+    <div class="small" id="inspect-hint">Строка кода DataMatrix этой единицы продукции (можно скопировать):</div>
+    <div class="inspect-code mono" id="inspect-code">(01)...</div>
+    <button id="btn-inspect-ok" class="btn btn-primary" style="width:100%">Понятно</button>
+  </div>
+</div>
+
+<!-- ======== ОВЕРЛЕИ ======== -->
+<div id="title-screen">
+  <div class="title-box">
+    <div class="logo">🏭</div>
+    <h1>ЧЕСТНЫЙ ЗНАК: ЛИНИЯ</h1>
+    <p class="sub">Ваш завод должен начать выпускать маркированную продукцию<br>до <b>Часа Ч</b>. Успеете — пройдёте аудит и выйдете в плюс. Нет — бизнес закрыт.</p>
+    <div class="how">
+      <div><b>📦 Закажите коды</b> в Честном знаке — они генерируются ~15 секунд.</div>
+      <div><b>🖨️ Печатайте этикетки</b> принтером, а затем наклеивайте их на продукт (пока не купите аппликатор).</div>
+      <div><b>📷 Контролируйте</b> — человек со сканером ошибается в 33% случаев; брак-лоток возвращается на линию кликом.</div>
+      <div><b>📤 Отправляйте отчёты партиями</b> — без сервера вручную кнопкой, с сервером автоматически.</div>
+      <div><b>⏳ Не опоздайте</b> — первые 45 секунд штрафов нет, затем требование ЧЗ растёт к Часу Ч.</div>
+    </div>
+    <div class="prod-select">
+      <span>Продукт завода (один тип на партию):</span>
+      <button class="btn btn-debug prod-btn" data-prod="0">🥫 Консервы · 14 ₽</button>
+      <button class="btn btn-debug prod-btn" data-prod="1">🧴 Шампунь · 12 ₽</button>
+      <button class="btn btn-debug prod-btn" data-prod="2">🥛 Молоко · 9 ₽</button>
+      <button class="btn btn-debug prod-btn" data-prod="3">🧃 Соки · 8 ₽</button>
+      <button class="btn btn-debug prod-btn" data-prod="4">🥤 Напитки · 6 ₽</button>
+    </div>
+    <div class="prod-select diff-select">
+      <span>Сложность партии (бюджет / дедлайн):</span>
+      <button class="btn btn-debug diff-btn" data-diff="easy">🟢 Лёгкий · 700 ₽ · 12 мин</button>
+      <button class="btn btn-debug diff-btn" data-diff="standard">⚪ Стандарт · 400 ₽ · 10 мин</button>
+      <button class="btn btn-debug diff-btn" data-diff="hard">🔴 Хардкор · 150 ₽ · 8 мин</button>
+      <button class="btn btn-debug diff-btn" data-diff="endless">∞ Бесконечный · 500 ₽ · без дедлайна</button>
+    </div>
+    <div class="title-buttons">
+      <button id="btn-new"   class="btn btn-primary">▶ Новая игра</button>
+      <button id="btn-cont"  class="btn hidden">📂 Продолжить</button>
+      <button id="btn-reset" class="btn btn-danger hidden">🗑 Сбросить прогресс</button>
+    </div>
+    <div class="records-panel" id="records-panel"></div>
+    <div class="debug-panel">
+      <span>🧪 Тест-панель:</span>
+      <button class="btn btn-debug" data-cheat="ir1000">+1000 ₽</button>
+      <button class="btn btn-debug" data-cheat="ir5000">+5000 ₽</button>
+      <button class="btn btn-debug" data-cheat="event">Событие</button>
+      <button class="btn btn-debug" data-cheat="fastcore">Мгн. ядро</button>
+      <button class="btn btn-debug" data-cheat="time">−2 мин</button>
+    </div>
+  </div>
+</div>
+
+<div id="gameover-screen" class="overlay hidden">
+  <div class="overlay-box">
+    <div class="big-emoji">🏚️</div>
+    <h2 id="gameover-title">Бизнес закрыт</h2>
+    <p id="gameover-text"></p>
+    <div class="stats-mini" id="gameover-stats"></div>
+    <button id="btn-retry" class="btn btn-primary">↻ Новая попытка</button>
+  </div>
+</div>
+
+<div id="victory-screen" class="overlay hidden">
+  <div class="overlay-box victory">
+    <div class="big-emoji">🏆</div>
+    <h2>Акт приёмки подписан!</h2>
+    <p>Вы успешно внедрили «Честный знак» и прошли аудит. Производство работает в плюс — играйте дальше: вторая линия, лазерная гравировка и новые рекорды ждут.</p>
+    <div class="stats-mini" id="victory-stats"></div>
+    <button id="btn-continue" class="btn btn-primary">▶ Играть дальше (песочница)</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="vendor/datamatrix.min.js"></script>
+<script src="js/records.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/events.js"></script>
+<script src="js/upgrades.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

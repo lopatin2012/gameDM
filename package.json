@@ -1,0 +1,14 @@
+{
+  "name": "datamatrix-game",
+  "version": "1.0.0",
+  "description": "Игра «Честный знак: DM» — внедрение цифровой маркировки на производственной линии",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/run.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "private": true
+}
