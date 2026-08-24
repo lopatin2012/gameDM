@@ -1,0 +1,14 @@
+services:
+  game:
+    build: .
+    container_name: datamatrix-game
+    ports:
+      - "8085:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      - game-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  game-data:
