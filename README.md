@@ -16,6 +16,15 @@ node server.js              # или: npm start
 
 Без сервера (двойной клик по `index.html`) игра работает так же, но рекорды — в localStorage браузера.
 
+**Через Docker (docker-compose):**
+
+```
+docker compose up -d --build
+```
+
+Игра откроется на **http://localhost:8085** (хост-порт настраивается в `docker-compose.yml`; внутри контейнера сервер слушает `PORT`, по умолчанию 8080).
+Рекорды сохраняются в Docker-томе `game-data` (маунт в `/app/data` — `data/records.json`), поэтому переживают пересоздание контейнера. Запуск контейнера: `docker compose down` / `docker compose stop`.
+
 **Тесты:**
 
 ```
